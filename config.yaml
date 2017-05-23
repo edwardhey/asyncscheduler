@@ -1,0 +1,15 @@
+http:
+  address: ":1984"
+
+job:
+  db: /tmp/test.db
+  maxnums: 65535
+  poolnums: 30
+  connect_timeout: 30
+  read_write_timeout: 30
+  task_chan_buffer_size: 10000
+  pool_size: 100
+
+log:
+  path: 
+  level: 7

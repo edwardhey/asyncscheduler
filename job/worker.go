@@ -1,7 +1,6 @@
 package job
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"golib/link/httplink"
@@ -152,6 +151,7 @@ func (p *workerJobPool) Run() {
 		// wg.Add(1)
 		go func() {
 			for task := range p.tasks {
+				// fmt.Println("get job todo", task.job)
 				p.DoJob(&task)
 			}
 			// wg.Done()
@@ -160,96 +160,4 @@ func (p *workerJobPool) Run() {
 
 	// wg.Wait()
 	// fmt.Println("WorkerPool | Pool exit.")
-}
-
-func createTimerWorker(now uint32, _time uint32, interval uint32) {
-	// done := make(chan struct{})
-	// utils.Debug("create timer", "create worker %d", _time)
-	sm.Create(_time)
-	if now == _time {
-		sm.SendSignal(_time)
-	}
-	ctx := context.Background()
-	smn, _ := sm.Get(_time)
-	ctx = context.WithValue(ctx, contextKey("_time"), _time)
-	ctx, cancel := context.WithDeadline(ctx, time.Unix(int64(_time+3), 0))
-	defer func() {
-		// fmt.Println(getNowTimestamp(), _time, "资源回收")
-		// utils.Debug("create timer", "gc %d", _time)
-		cancel()
-		// close(done)
-		// sm.Delete(_time)
-		sm.Delete(_time)
-	}()
-	go timerClock(ctx)
-	select {
-	case <-smn.Done:
-	case <-ctx.Done():
-		return
-	}
-}
-
-func timerClock(ctx context.Context) {
-	_time := ctx.Value(contextKey("_time")).(uint32)
-	smn, err := sm.Get(_time)
-	if err != nil {
-		return
-	}
-	for {
-		select {
-		case <-smn.Done:
-			// fmt.Println(_time, "上一级调用被取消了")
-			utils.ErrorWithLableAndFormat("timer clock", "%v already done", _time)
-			return
-		default:
-		}
-
-		select {
-		case <-smn.Chan:
-			//TODO: 执行任务
-			// utils.Debug("time clock", "%v active job worker", _time)
-			//调起gorouting,把任务放入到worker中
-			err := db.GetHandler().Update(func(tx *bolt.Tx) error {
-				// secondBucket := dayBucket.Bucket([]byte(string(_time % 86400)))
-				secondBucket, err := GetSecondBucketByTime(tx, _time)
-				if err != nil {
-					return nil
-					// return err
-				}
-				for i := 1; i <= 10; i++ {
-					priorityBucket := secondBucket.Bucket([]byte(string(i)))
-					if priorityBucket == nil {
-						continue
-					}
-
-					priorityBucket.ForEach(func(k, v []byte) error {
-						job, err := GetJob(tx, v)
-						// err := json.Unmarshal(v, job)
-						if err != nil {
-							utils.ErrorWithLableAndFormat("time clock", "json unmarshal error:%v id:%s", err, string(v))
-							return nil
-						}
-						if job.Status != StatusFailed {
-							wjpTasks <- workerJobTask{
-								job: job,
-								// bucket: priorityBucket,
-							}
-						}
-						return nil
-					})
-				}
-
-				// tx.Bucket("")
-				return nil
-			})
-			if err != nil {
-				utils.ErrorWithLableAndFormat("time clock", "db error:%v", err)
-			}
-
-			// ctx.Done()
-			// done <- struct{}{}
-			sm.Close(_time)
-			return
-		}
-	}
 }

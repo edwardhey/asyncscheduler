@@ -97,7 +97,7 @@ func (j *Job) Failed(err error, resp *interfaces.Resp) {
 		j.Status = StatusFailed
 		break
 	}
-	utils.DebugWithLableAndFormat("Consume Task", "job:%+v", j)
+	// utils.DebugWithLableAndFormat("Consume Task", "job:%+v", j)
 }
 
 func (j *Job) Success() {
@@ -179,7 +179,7 @@ func GetJobsWithoutTx() (map[string]*Job, error) {
 }
 
 func (j *Job) Save(tx *bolt.Tx) error {
-	utils.DebugWithLableAndFormat("set job", "%v", j)
+	utils.DebugWithLableAndFormat("set job", "%+v", j)
 	// fmt.Println(j.TTR, j.Priority)
 
 	priorityBucket, err := CreatePriorityBucketByTimeAndPriority(tx, j.TTR, j.Priority)
@@ -256,7 +256,6 @@ func GetSecondBucketByTime(tx *bolt.Tx, _t uint32) (*bolt.Bucket, error) {
 	if dayBucket, err = GetDayBucketByTime(tx, _t); err != nil {
 		return nil, err
 	}
-	// fmt.Println(_t % 86400)
 	__t := _t % 86400
 	secondBucket := dayBucket.Bucket([]byte(string(__t)))
 	if secondBucket == nil {

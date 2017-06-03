@@ -78,24 +78,70 @@ func InitWithViper(v *viper.Viper) {
 
 	sm = newSignalMap(nums)
 	//不断的启动gorouting
-	go func(t uint32) {
-		for {
-			// fmt.Println("----------------------")
-			timeNow := getNowTimestamp()
+	// go func(t uint32) {
+	// 	for {
+	// 		// fmt.Println("----------------------")
+	// 		timeNow := getNowTimestamp()
 
-			for i := timeNow; i < timeNow+t; i++ {
-				go createTimerWorker(timeNow, i, t)
-			}
-			time.Sleep(time.Duration(t) * time.Second)
-		}
-	}(uint32(nums))
+	// 		for i := timeNow; i < timeNow+t; i++ {
+	// 			go createTimerWorker(timeNow, i, t)
+	// 		}
+	// 		time.Sleep(time.Duration(t) * time.Second)
+	// 	}
+	// }(uint32(nums))
 
 	//到时间点了以后往chan发信号激活
 	go func() {
 		ticker := time.NewTicker(1 * time.Second)
 		for {
-			time := <-ticker.C
-			sm.SendSignal(uint32(time.Unix()))
+			//起gorouting把任务从bucket放入到pool中
+			_t := <-ticker.C
+			go func(_time uint32) {
+				// fmt.Println(_time)
+				err := db.GetHandler().Update(func(tx *bolt.Tx) error {
+					// fmt.Println(_time % 86400)
+					// secondBucket := dayBucket.Bucket([]byte(string(_time % 86400)))
+					secondBucket, err := GetSecondBucketByTime(tx, _time)
+					if err != nil {
+						return nil
+						// return err
+					}
+					for i := 1; i <= 10; i++ {
+						priorityBucket := secondBucket.Bucket([]byte(string(i)))
+						if priorityBucket == nil {
+							continue
+						}
+
+						priorityBucket.ForEach(func(k, v []byte) error {
+							job, err := GetJob(tx, v)
+							// fmt.Println("aaaaaaaaaaaa", job.ID, job)
+							// err := json.Unmarshal(v, job)
+							if err != nil {
+								utils.ErrorWithLableAndFormat("time clock", "json unmarshal error:%v id:%s", err, string(v))
+								return nil
+							}
+							if job.Status != StatusFailed {
+								wjpTasks <- workerJobTask{
+									job: job,
+									// bucket: priorityBucket,
+								}
+							}
+							return nil
+						})
+					}
+					return nil
+				})
+				if err != nil {
+					utils.ErrorWithLableAndFormat("time clock", "db error:%v", err)
+				}
+				// tx.Bucket("")
+				// return nil
+			}(uint32(_t.Unix()))
+			// if err != nil {
+			// 	utils.ErrorWithLableAndFormat("time clock", "db error:%v", err)
+			// }
+			// sm.SendSignal(uint32(time.Unix()))
+
 		}
 	}()
 

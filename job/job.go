@@ -116,6 +116,8 @@ func (j *Job) CheckValidate() bool {
 		return false
 	} else if j.TTL >= 0 && j.TTL < getNowTimestamp() {
 		return false
+	} else if j.Status == StatusFailed || j.Status == StatusFinished {
+		return false
 	}
 	return true
 }

@@ -85,10 +85,12 @@ func (p *workerJobPool) DoJob(task *workerJobTask) error {
 
 	task.job.Mtime = getNowTimestamp()
 	task.job.AttemptTimes++
-	if task.job.Payload != nil {
+	if task.job.Method == MethodGet {
 		req = httplink.Get(task.job.URL)
 	} else {
-		req = httplink.Post(task.job.URL).ParamsFromStruct(task.job.Payload)
+		//req = httplink.Post(task.job.URL).ParamsFromStruct(task.job.Payload)
+		// fmt.Println(task.job.Payload)
+		req = httplink.Post(task.job.URL).Params(task.job.Payload)
 	}
 
 	resp, err = req.SetTimeout(time.Duration(3)*time.Second, time.Second*time.Duration(10)).DoRequest()

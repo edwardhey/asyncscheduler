@@ -102,7 +102,7 @@ func SetJob(c echo.Context) error {
 			Error: err.Error(),
 		})
 	}
-	// fmt.Println(job)
+	// fmt.Println(j)
 	// return nil
 	// j.IgnoreResponse = true
 	// j.MaxAttempts = 10

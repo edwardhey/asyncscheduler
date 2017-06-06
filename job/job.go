@@ -3,6 +3,7 @@ package job
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	"edwardhey.com/asyncscheduler/interfaces"
@@ -18,38 +19,43 @@ var RunJobNums int
 
 var jobBucketName []byte = []byte("jobs")
 
+type Method string
+
 const (
 	// jobDaysBucketName string = "jobDays"    //有任务的日期，用来遍历数据
 	// finishedBucketName string = "finishedJobs"  //已完成，过期的将会被删除
 	// MaxJobNums          int    = 65535           //最大任务数
-	jobDayBucketName  string = "job_%s"     //任务详细数据
-	jobDatetimeFormat string = "2006-01-02" //任务日期格
-	StatusPedding            = 0            //就绪中
-	StatusRetrying           = -10          //重试中
-	StatusRetryFailed        = -20          //重试失败，等待再次重试
-	StatusFinished           = 100          //已完成
-	StatusFailed             = -100         //已失败
+	jobDayBucketName  string = "job_%s"       //任务详细数据
+	jobDatetimeFormat string = "2006-01-02"   //任务日期格
+	MethodPost        Method = Method("POST") //post
+	MethodGet         Method = Method("Get")  //get
+	StatusPedding            = 0              //就绪中
+	StatusRetrying           = -10            //重试中
+	StatusRetryFailed        = -20            //重试失败，等待再次重试
+	StatusFinished           = 100            //已完成
+	StatusFailed             = -100           //已失败
 )
 
 //Job 任务
 type Job struct {
-	ID                string      `json:"id"`                        //Job的ID
-	URL               string      `json:"url"`                       //请求的Url地址
-	TTL               uint32      `json:"ttl"`                       //过期时间
-	TTR               uint32      `json:"ttr"`                       //执行时间
-	Payload           interface{} `json:"payload"`                   //内容
-	Priority          uint8       `json:"priority"`                  //权重
-	MaxAttempts       uint8       `json:"max_attempts,string"`       //最大尝试次数
-	AttemptTimes      uint8       `json:"attempt_times,string"`      //重试次数
-	AttemptInterval   uint        `json:"attempt_interval,string"`   //重试间隔
-	ConnectTimeout    uint8       `json:"connect_timeout,string"`    //链接超时
-	ReadWriteTimeout  uint8       `json:"read_write_timeout,string"` //读写超时
-	Callback          string      `json:"callback"`                  //回调地址
-	IsCallbackSuccess bool        `json:"is_callback_success"`       //是否通知成功
-	Status            int8        `json:"status,string"`             //状态
-	IgnoreResponse    bool        `json:"ignore_response"`           //是否忽略返回内容，只要判断状态为200，就是视为成功
-	Ctime             uint32      `json:"ctime"`                     //创建时间
-	Mtime             uint32      `json:"mtime"`                     //更改时间
+	ID                string     `json:"id"`                        //Job的ID
+	URL               string     `json:"url"`                       //请求的Url地址
+	TTL               uint32     `json:"ttl"`                       //过期时间
+	TTR               uint32     `json:"ttr"`                       //执行时间
+	Payload           url.Values `json:"payload"`                   //内容
+	Method            Method     `json:"method"`                    //方法
+	Priority          uint8      `json:"priority"`                  //权重
+	MaxAttempts       uint8      `json:"max_attempts,string"`       //最大尝试次数
+	AttemptTimes      uint8      `json:"attempt_times,string"`      //重试次数
+	AttemptInterval   uint       `json:"attempt_interval,string"`   //重试间隔
+	ConnectTimeout    uint8      `json:"connect_timeout,string"`    //链接超时
+	ReadWriteTimeout  uint8      `json:"read_write_timeout,string"` //读写超时
+	Callback          string     `json:"callback"`                  //回调地址
+	IsCallbackSuccess bool       `json:"is_callback_success"`       //是否通知成功
+	Status            int8       `json:"status,string"`             //状态
+	IgnoreResponse    bool       `json:"ignore_response"`           //是否忽略返回内容，只要判断状态为200，就是视为成功
+	Ctime             uint32     `json:"ctime"`                     //创建时间
+	Mtime             uint32     `json:"mtime"`                     //更改时间
 }
 
 func (j *Job) GetJobKey() string {

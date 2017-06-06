@@ -43,7 +43,7 @@ type Job struct {
 	URL               string      `json:"url"`                       //请求的Url地址
 	TTL               uint32      `json:"ttl"`                       //过期时间
 	TTR               uint32      `json:"ttr"`                       //执行时间
-	Payload           interface{} `json:"payload"`                   //内容
+	Payload           url.Values{} `json:"payload"`                   //内容
 	Priority          uint8       `json:"priority"`                  //权重
 	MaxAttempts       uint8       `json:"max_attempts,string"`       //最大尝试次数
 	AttemptTimes      uint8       `json:"attempt_times,string"`      //重试次数

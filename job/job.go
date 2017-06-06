@@ -101,7 +101,7 @@ func (j *Job) Failed(err error, resp *interfaces.Resp) {
 }
 
 func (j *Job) Success() {
-	j.Status = StatusFailed
+	j.Status = StatusFinished
 }
 
 func (j *Job) CheckValidate() bool {

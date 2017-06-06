@@ -1,7 +1,6 @@
 package job
 
 import (
-	"fmt"
 	"time"
 
 	"encoding/json"
@@ -39,7 +38,6 @@ func flushJobsWithRetryingToNewBuckets() {
 			if job.Ctime < timeout {
 				break
 			} else if job.CheckValidate() && job.TTR <= now {
-				fmt.Println("aaaa", job.CheckValidate())
 				job.TTR = getNowTimestamp() + 10 //10秒后执行
 				job.Save(tx)
 			}
